@@ -1,4 +1,3 @@
-import ipdb
 from bs4 import BeautifulSoup
 import sys
 import json
@@ -22,14 +21,10 @@ fname = 'test_memories.html'
 with open (fname, "r") as myfile:
     data=myfile.readlines()
 
-#open the entire file
-with open (fname, "r") as myfile:
-    soup=BeautifulSoup(myfile)
-
 for line in data:
     if line.startswith('\t<p>&nbsp;</p>\t'):
         entryJSON = {}
-        line_soup = BeautifulSoup(line)
+        line_soup = BeautifulSoup(line,'html.parser')
 
         dateText = line_soup.select('p.sDateCreated')[0].getText()
         dateTime = datetime.datetime.strptime(dateText, '%A, %B %d, %Y at %H:%M')
@@ -75,4 +70,4 @@ for line in data:
         randKey = ''.join(random.choice('0123456789abcdefghijklmnopqrstuvwxyz') for i in range(16))
         entryJSON["id"] = str(milli) + '-' + randKey
         with open('output/'+entryJSON['id']+'.json', 'w') as outfile:
-            json.dump(entryJSON, outfile)
+            json.dump(entryJSON, outfile, sort_keys=True)
