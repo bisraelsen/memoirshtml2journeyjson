@@ -30,11 +30,12 @@ for line in data:
         dateTime = datetime.datetime.strptime(dateText, '%A, %B %d, %Y at %H:%M')
         milli = unix_time_millis(dateTime)
         entryJSON['date_journal'] = milli
-        entryJSON['date_modified'] = milli + 100
+        entryJSON['date_modified'] = milli + 1000*120 #two minutes
 
         entryJSON['address'] = 'testing'
 
         entryJSON['music_artist'] = ''
+        entryJSON['music_title'] = ''
 
         entryText =  line_soup.select('span.sNote')[0].getText('\n\n',strip=True)
         entryJSON['text'] = entryText
@@ -49,9 +50,13 @@ for line in data:
 
         entryJSON['photos'] = []
 
-        tagText = line_soup.select('span.sTags')[0].getText().split(',')
+        # get list of tags, lowercase
+        tagText = line_soup.select('span.sTags')[0].getText().lower().split(',')
         tags = [x.strip() for x in tagText]
-        entryJSON['tags'] = tags
+        if len(tags) > 0:
+            entryJSON['tags'] = tags
+        else:
+            entryJSON['tags'] = []
 
         geoText = line_soup.select('p.sLocation')[0].get_text('&&').split('&&')
         entryJSON['weather']={'id':-1, 'icon':'','place':'','degree_c':1.7, 'description':''}
