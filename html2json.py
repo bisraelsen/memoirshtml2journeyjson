@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import sys
+import os
 import json
 import datetime
 import re
@@ -16,10 +17,22 @@ def unix_time_millis(dt):
     # add on some random milliseconds to the end so we don't get exact matches
     return int(unix_time(dt) * 1000.0) + random.randint(0,1000)
 
+def check_for_duplicate(millis, dir):
+    files = os.listdir(dir)
+
+    for file in files:
+        #get the stuff before the '-'
+        short = int(file.strip('-').split('-')[0])
+
+        if abs(abs(millis) - short) <= 1000:
+            return True
+    return False
+
 #fname = sys.argv[1]
 #output = sys.argv[2]
 
-fname = 'memories.html'
+fname = 'test_`memories.html'
+outdir = 'output/'
 
 with open (fname, "r") as myfile:
     data=myfile.readlines()
@@ -33,6 +46,11 @@ for line in data:
         dateTime = datetime.datetime.strptime(dateText, '%A, %B %d, %Y at %H:%M')
 
         milli = unix_time_millis(dateTime)
+
+        # check to see if this is a duplicate entry
+        if check_for_duplicate(milli, outdir):
+            print 'duplicate -- skipping'
+            continue
 
         randKey = ''.join(random.choice('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') for i in range(16))
 
@@ -102,5 +120,5 @@ for line in data:
                 entryJSON['weather']['icon'] = OW.weather[x[0]]['icon']
 
 
-        with open('output/'+id+'.json', 'w') as outfile:
+        with open(outdir + id + '.json', 'w') as outfile:
             json.dump(entryJSON, outfile, sort_keys=True, indent=2)
