@@ -1,10 +1,11 @@
-import ipdb
 from bs4 import BeautifulSoup
 import sys
 import json
 import datetime
 import re
 import random
+import difflib
+import openWeather as OW
 
 def unix_time(dt):
     epoch = datetime.datetime.utcfromtimestamp(0)
@@ -18,7 +19,7 @@ def unix_time_millis(dt):
 #fname = sys.argv[1]
 #output = sys.argv[2]
 
-fname = 'test_memories.html'
+fname = 'memories.html'
 
 with open (fname, "r") as myfile:
     data=myfile.readlines()
@@ -91,7 +92,15 @@ for line in data:
             desc = weatherText[s_ind+1:e_ind].strip().lower()
 
             entryJSON['weather']['degree_c'] = degC
-            entryJSON['weather']['description'] = desc
+
+            # get the closest matching "open weather description, id, and icon"
+            x = difflib.get_close_matches(desc,list(OW.weather.keys()),n=1)
+            if x:
+                # if something was returned
+                entryJSON['weather']['description'] = x[0]
+                entryJSON['weather']['id'] = OW.weather[x[0]]['id']
+                entryJSON['weather']['icon'] = OW.weather[x[0]]['icon']
+
 
         with open('output/'+id+'.json', 'w') as outfile:
             json.dump(entryJSON, outfile, sort_keys=True, indent=2)
