@@ -4,8 +4,10 @@ import json
 import datetime
 import random
 import difflib
-import openWeather as OW
 import time
+
+import openWeather as OW
+
 
 def unix_time(dt):
     epoch = datetime.datetime.utcfromtimestamp(0)
@@ -19,6 +21,7 @@ def unix_time_millis(dt, tz):
     return int(unix_time(dt) * 1000.0) + ofst*60*60*1000 + random.randint(0,1000)
 
 def check_for_duplicate(millis, dir):
+    # my export had duplicates, so maybe others will have them as well?
     files = os.listdir(dir)
 
     for file in files:
