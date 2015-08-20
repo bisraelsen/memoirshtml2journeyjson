@@ -1,21 +1,22 @@
 from bs4 import BeautifulSoup
-import sys
 import os
 import json
 import datetime
-import re
 import random
 import difflib
 import openWeather as OW
+import time
 
 def unix_time(dt):
     epoch = datetime.datetime.utcfromtimestamp(0)
     delta = dt - epoch
     return delta.total_seconds()
 
-def unix_time_millis(dt):
+def unix_time_millis(dt, tz):
     # add on some random milliseconds to the end so we don't get exact matches
-    return int(unix_time(dt) * 1000.0) + random.randint(0,1000)
+    # add on hours for difference between MST and UTC
+    ofst = time.altzone/3600
+    return int(unix_time(dt) * 1000.0) + ofst*60*60*1000 + random.randint(0,1000)
 
 def check_for_duplicate(millis, dir):
     files = os.listdir(dir)
@@ -24,6 +25,7 @@ def check_for_duplicate(millis, dir):
         #get the stuff before the '-'
         short = int(file.strip('-').split('-')[0])
 
+        # if we are within 1000 ms then these are duplicates
         if abs(abs(millis) - short) <= 1000:
             return True
     return False
@@ -31,8 +33,9 @@ def check_for_duplicate(millis, dir):
 #fname = sys.argv[1]
 #output = sys.argv[2]
 
-fname = 'test_`memories.html'
+fname = 'memories.html'
 outdir = 'output/'
+timezone = 'MST'
 
 with open (fname, "r") as myfile:
     data=myfile.readlines()
@@ -42,10 +45,11 @@ for line in data:
         entryJSON = {}
         line_soup = BeautifulSoup(line,'html.parser')
 
-        dateText = line_soup.select('p.sDateCreated')[0].getText()
-        dateTime = datetime.datetime.strptime(dateText, '%A, %B %d, %Y at %H:%M')
+        # force to UTC timezone so the millis calculation works out correctly
+        dateText = line_soup.select('p.sDateCreated')[0].getText() + ' ' + timezone
+        dateTime = datetime.datetime.strptime(dateText, '%A, %B %d, %Y at %H:%M %Z')
 
-        milli = unix_time_millis(dateTime)
+        milli = unix_time_millis(dateTime, timezone)
 
         # check to see if this is a duplicate entry
         if check_for_duplicate(milli, outdir):
@@ -55,7 +59,7 @@ for line in data:
         randKey = ''.join(random.choice('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') for i in range(16))
 
         entryJSON['date_journal'] = milli
-        entryJSON['date_modified'] = milli + 1000*120 #two minutes
+        entryJSON['date_modified'] = milli + 1000*120 #make this up, 2 minutes
         id = str(milli) + '-' + randKey
         entryJSON['id'] = id
 
@@ -73,6 +77,7 @@ for line in data:
 
         entryJSON['mood']=0
 
+        # I will do photos by hand, because Journey can only handle 1... I don't want to make that choice with an algorithm
         entryJSON['photos'] = []
 
         # get list of tags, lowercase and no spaces
